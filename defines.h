@@ -20,9 +20,9 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
-const char BUG_REPORT_URL[] = "https://github.com/";
+const char BUG_REPORT_URL[] = "https://github.com/abhi1p/SignalAcq";
 
-const char UPDATES_INFO_URL[] = "https://api.github.com/repos/x/x/releases/latest";
+const char UPDATES_INFO_URL[] = "https://api.github.com/repos/abhi1p/SignalAcq/releases/latest";
 
 /// Maximum number of channels that can be set by user
 const unsigned MAX_NUM_CHANNELS = 64;
