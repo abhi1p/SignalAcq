@@ -22,6 +22,9 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="2" column="1">
     <widget class="QPushButton" name="charReadBtn">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Read</string>
      </property>
@@ -66,6 +69,9 @@
    </item>
    <item row="2" column="0">
     <widget class="QCheckBox" name="notifyEnableCheckBox">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Notify enable</string>
      </property>
@@ -79,6 +85,9 @@
    </item>
    <item row="3" column="0">
     <widget class="QLineEdit" name="bleCharValueLineEdit">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string/>
      </property>
@@ -89,6 +98,9 @@
    </item>
    <item row="3" column="1">
     <widget class="QPushButton" name="charWriteBtn">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="text">
       <string>Write</string>
      </property>

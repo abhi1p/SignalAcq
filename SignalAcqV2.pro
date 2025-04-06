@@ -8,6 +8,9 @@ CONFIG += qwt
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 DEFINES += PROGRAM_NAME=\\\"SignalAcq\\\"
+
+RC_FILE = misc\windows_icon.rc
+
 # Only define in release builds
 CONFIG(release, debug|release) {
     DEFINES += QT_NO_INFO_OUTPUT
@@ -20,7 +23,7 @@ CONFIG(release, debug|release) {
 TARGET=SignalAcq
 DEFINES += CHAR_MAX_DISPLAY_SIZE=50
 
-DEFINES += VERSION_MAJOR=1 VERSION_MINOR=0 VERSION_PATCH=0 VERSION_STRING=\"\\\"1.0.0\\\"\" VERSION_REVISION=\"\\\"0\\\"\"
+DEFINES += VERSION_MAJOR=1 VERSION_MINOR=0 VERSION_PATCH=0 VERSION_STRING=\"\\\"1.0.1\\\"\" VERSION_REVISION=\"\\\"0\\\"\"
 SOURCES += \
     BLE/ble.cpp \
     Common/abstractdevice.cpp \
@@ -202,6 +205,7 @@ RESOURCES += \
 
 DISTFILES += \
     README.md \
+    SignalAcq BLE manual v1.0.pdf \
     misc/bluetooth_icon.png \
     misc/program_name.desktop.in \
     misc/program_name.png \
