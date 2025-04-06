@@ -24,6 +24,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QList>
+#include <QVersionNumber>
 
 #include "versionnumber.h"
 

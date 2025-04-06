@@ -90,6 +90,9 @@ private slots:
     void onNumOfChannelsChanged(unsigned value);
     void onSyncWordChanged(QByteArray);
     void onSizeFieldChanged(FramedReaderSettings::SizeFieldType, unsigned);
+
+signals:
+    //void log(QtMsgType type, QString text);
 };
 
 #endif // FRAMEDREADER_H

@@ -58,6 +58,7 @@ public:
 signals:
     // TODO: should we keep this?
     void numOfChannelsChanged(unsigned);
+    void log(QtMsgType type, QString text);
 
 public slots:
     /**

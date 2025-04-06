@@ -59,6 +59,8 @@ signals:
     void focusRequested();
     void addCharacteristicsSignal(QBluetoothUuid srvcUuid, QBluetoothUuid charUuid, QLowEnergyCharacteristic::PropertyTypes flag);
     void writeCharacteristicsSignal(QBluetoothUuid charUuid, QByteArray value);
+    void sendCommandSerialSignal(QByteArray command);
+    void log(QtMsgType type, QString text);
 
 private:
     Ui::CommandPanel *ui;
@@ -81,7 +83,7 @@ private slots:
     CommandWidget* newCommandSerial();
     CommandWidgetBLE* newCommandBLE();
     void addNewCommand();
-    void sendCommandSerial(QByteArray command);
+    // void sendCommandSerial(QByteArray command);
     void sendCommandBLE(QBluetoothUuid charUuid, QByteArray command);
 
 
@@ -90,6 +92,8 @@ public slots:
     void bleConnected(bool connected);
     void serialPortOpened(bool opened);
     void addCharacteristics(QBluetoothUuid srvcUuid, QBluetoothUuid charUuid, QLowEnergyCharacteristic::PropertyTypes flag);
+
+    void updateMenuCommands();
 };
 
 #endif // COMMANDPANEL_H

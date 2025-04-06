@@ -48,6 +48,7 @@ public:
     // QByteArray (AbstractDevice::*read)(qint64 maxSize);
     // qint64 (AbstractDevice::*read_b)(char *data, qint64 maxSize);
     // bool (AbstractDevice::*getChar)(char *c);
+    AbstractDevice::INPUT_DEVICE currentDevice();
 
 
 public slots:

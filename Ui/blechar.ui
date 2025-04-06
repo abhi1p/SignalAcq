@@ -78,7 +78,14 @@
     </widget>
    </item>
    <item row="3" column="0">
-    <widget class="QLineEdit" name="bleCharValueLineEdit"/>
+    <widget class="QLineEdit" name="bleCharValueLineEdit">
+     <property name="text">
+      <string/>
+     </property>
+     <property name="clearButtonEnabled">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item row="3" column="1">
     <widget class="QPushButton" name="charWriteBtn">

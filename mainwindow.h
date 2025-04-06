@@ -7,7 +7,9 @@
 #include "BLE/ble.h"
 #include "Plot/samplecounter.h"
 #include "Ui/ble_config.h"
+#include "Ui/bpslabel.h"
 #include "Ui/commandpanel.h"
+#include "Ui/dataformatpanel.h"
 #include "Ui/datatextview.h"
 #include "Ui/plotcontrolpanel.h"
 #include "Ui/portcontrol.h"
@@ -101,6 +103,9 @@ private:
     /// `QWidget::closeEvent` handler
     void closeEvent(QCloseEvent * event);
 
+public slots:
+    void log(QtMsgType type, QString text);
+
 private slots:
     void onPortToggled(bool open);
     void onSourceChanged(Source* source);
@@ -128,6 +133,7 @@ private slots:
 
 signals:
     void updateInputDeviceSignal(AbstractDevice::INPUT_DEVICE device);
+    void updateMenuCommands();
 
 };
 #endif // MAINWINDOW_H

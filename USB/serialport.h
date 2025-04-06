@@ -20,6 +20,7 @@ signals:
     void loadPortListSignal();
     void maxBitRateSignal(quint64 maxBitRate);
     void serialDataReadSignal(const QByteArray &newValue);
+    void log(QtMsgType type, QString text);
 
 
 public slots:
@@ -34,6 +35,7 @@ public slots:
     void selectFlowControl(int flowControl); // flowControl must be one of QSerialPort::FlowControl
     void setDtr(bool toSet);
     void setRts(bool toSet);
+    void sendCommandSerial(QByteArray command);
 
 private slots:
     void updatePinLeds();

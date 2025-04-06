@@ -46,8 +46,9 @@ CommandPanel::CommandPanel(QWidget *parent) :
     connect(ui->pbNew, &QPushButton::clicked, this, &CommandPanel::addNewCommand);
     connect(&_newCommandAction, &QAction::triggered, this, &CommandPanel::addNewCommand);
 
-    _menu.addAction(&_newCommandAction);
-    _menu.addSeparator();
+    //_menu.addAction(&_newCommandAction);
+    //_menu.addSeparator();
+    updateMenuCommands();
 
     serialCommand_name_counter = 0;
     bleCommand_name_counter=0;
@@ -56,6 +57,8 @@ CommandPanel::CommandPanel(QWidget *parent) :
     qWarning()<<"Command panel init";
 
     m_bleCharModelMain=new BluetoothCharModel(this);
+
+
 }
 
 CommandPanel::~CommandPanel()
@@ -74,9 +77,10 @@ CommandWidget* CommandPanel::newCommandSerial()
     command->setName(tr("Command ") + QString::number(serialCommand_name_counter));
     ui->scrollAreaWidgetContentsSerial->layout()->addWidget(command);
     command->setFocusToEdit();
-    connect(command, &CommandWidget::sendCommand, this, &CommandPanel::sendCommandSerial);
-    connect(command, &CommandWidget::focusRequested, this, &CommandPanel::focusRequested);
-    _menu.addAction(command->sendAction());
+    connect(command, &CommandWidget::sendCommand, this, &CommandPanel::sendCommandSerialSignal,Qt::QueuedConnection);
+    connect(command, &CommandWidget::focusRequested, this, &CommandPanel::focusRequested,Qt::QueuedConnection);
+    connect(command, &CommandWidget::log, this, &CommandPanel::log,Qt::QueuedConnection);
+    //_menu.addAction(command->sendAction());
 
     // add to command list and remove on destroy
     commandsSerial << command;
@@ -105,7 +109,8 @@ CommandWidgetBLE *CommandPanel::newCommandBLE()
     connect(this, &CommandPanel::addCharacteristicsSignal, command, &CommandWidgetBLE::addCharacteristics,Qt::QueuedConnection);
     connect(command, &CommandWidgetBLE::sendCommandBLE, this, &CommandPanel::sendCommandBLE);
     connect(command, &CommandWidgetBLE::focusRequested, this, &CommandPanel::focusRequested);
-    _menu.addAction(command->sendAction());
+    connect(command, &CommandWidgetBLE::log, this, &CommandPanel::log,Qt::QueuedConnection);
+    //_menu.addAction(command->sendAction());
 
     // add to command list and remove on destroy
     commandsBLE << command;
@@ -123,7 +128,7 @@ CommandWidgetBLE *CommandPanel::newCommandBLE()
 void CommandPanel::addNewCommand()
 {
     QString objName=ui->commandStackedWidget->currentWidget()->objectName();
-    qInfo()<<"Object name: "<<objName;
+    //qInfo()<<"Object name: "<<objName;
     if(objName=="portPage")
     {
         newCommandSerial();
@@ -143,6 +148,37 @@ void CommandPanel::addNewCommand()
         // if()
 
     }
+    updateMenuCommands();
+}
+
+void CommandPanel::updateMenuCommands()
+{
+    QString objName=ui->commandStackedWidget->currentWidget()->objectName();
+    _menu.clear();
+    qInfo()<<"update Menu Commands";
+    _menu.addAction(&_newCommandAction);
+    _menu.addSeparator();
+    if(objName=="portPage")
+    {
+        for (int i = 0; i < commandsSerial.size(); i ++)
+        {
+            auto command = commandsSerial[i];
+            _menu.addAction(command->sendAction());
+
+        }
+
+
+    }
+    else if(objName=="blePage")
+    {
+        for (int i = 0; i < commandsBLE.size(); i ++)
+        {
+            auto command = commandsBLE[i];
+            _menu.addAction(command->sendAction());
+
+        }
+    }
+
 }
 
 void CommandPanel::reAssignShortcuts()
@@ -158,10 +194,18 @@ void CommandPanel::reAssignShortcuts()
 #endif
 }
 
+#if 0
 void CommandPanel::sendCommandSerial(QByteArray command)
 {
 
-
+    if(m_serialPortOpened)
+    {
+        emit sendCommandSerialSignal(command);
+    }
+    else
+    {
+        //emit log()
+    }
     // QString objName=ui->commandStackedWidget->currentWidget()->objectName();
     // // qInfo()<<"Object name: "<<objName;
     // if(objName=="portPage")
@@ -194,25 +238,28 @@ void CommandPanel::sendCommandSerial(QByteArray command)
     // }
 
 }
+#endif
 
 void CommandPanel::sendCommandBLE(QBluetoothUuid charUuid, QByteArray command)
 {
     qInfo()<<"Char Uuid: "<<charUuid<<" Command: "<<QString::fromUtf8(command);
-    if(!charUuid.isNull())
+    if(m_bleConnected)
     {
-        if(m_bleConnected)
+        if(!charUuid.isNull())
         {
             emit writeCharacteristicsSignal(charUuid,command);
         }
         else
         {
-            qInfo()<<"BLE device not connected";
+            qInfo()<<"Invalid Uuid";
+            emit log(QtCriticalMsg,"Invalid Uuid");
         }
 
     }
     else
     {
-        qInfo()<<"Invalid Uuid";
+        qInfo()<<"BLE device not connected";
+        emit log(QtCriticalMsg,"BLE device not connected");
     }
 
 }
@@ -224,6 +271,8 @@ void CommandPanel::addCharacteristics(QBluetoothUuid srvcUuid, QBluetoothUuid ch
         m_bleCharModelMain->addCharacteristic(srvcUuid,charUuid,flag);
     }
 }
+
+
 
 void CommandPanel::setCurrentIndex(int index)
 {
@@ -403,4 +452,5 @@ void CommandPanel::loadSettings(QSettings* settings)
 
     settings->endArray();
     settings->endGroup();
+    updateMenuCommands();
 }

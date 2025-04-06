@@ -74,28 +74,71 @@ void UpdateChecker::onReqFinished(QNetworkReply* reply)
         }
         else
         {
-            bool updateFound;
-            VersionNumber newVersion;
-            QString link;
-
-            if (!findUpdate(json, updateFound, newVersion, link))
+            QString version=json.object().value("tag_name").toString();
+            version.remove('v'); // remove 'v' prefix if present
+            QVersionNumber latest = QVersionNumber::fromString(version);
+            QVersionNumber current = QVersionNumber::fromString(CurrentVersion.toString());
+            qInfo()<<"App version string : "<<version;
+            qInfo()<<"App latest version : "<<latest;
+            qInfo()<<"App current version : "<<current;
+            if(latest>current)
             {
-                emit checkFailed("JSON parsing error.");
-                qCritical() << "Parsing the update info file failed:";
-                qCritical() << json;
-            }
-            else
-            {
-                if (updateFound)
+                QString htmlUrl = json.object().value("html_url").toString();
+                if(!htmlUrl.isEmpty())
                 {
-                    emit checkFinished(
-                        true, newVersion.toString(), link);
+                    qInfo()<<"App download link: "<<htmlUrl;
+                    emit checkFinished(true,version,htmlUrl);
+                    // emit checkFinished(true,latest.toString(),htmlUrl);
                 }
                 else
                 {
-                    emit checkFinished(false, "", "");
+                    emit checkFinished(false,"","");
                 }
             }
+            else
+            {
+                emit checkFinished(false,"","");
+            }
+
+
+
+            // QUrl()
+            // QJsonArray assets = json.object().value("assets").toArray();
+            // QString downloadUrl;
+            // for (const QJsonValue &assetVal : std::as_const(assets))
+            // {
+            //     QJsonObject asset = assetVal.toObject();
+            //     QString name = asset["name"].toString();
+
+            //     if (name.endsWith(".exe")) { // or .zip/.AppImage/etc
+            //         downloadUrl = asset["browser_download_url"].toString();
+            //         break;
+            //     }
+            // }
+            // qInfo()<<"App download link: "<<downloadUrl;
+
+        //     bool updateFound;
+        //     VersionNumber newVersion;
+        //     QString link;
+
+        //     if (!findUpdate(json, updateFound, newVersion, link))
+        //     {
+        //         emit checkFailed("JSON parsing error.");
+        //         qCritical() << "Parsing the update info file failed:";
+        //         qCritical() << json;
+        //     }
+        //     else
+        //     {
+        //         if (updateFound)
+        //         {
+        //             emit checkFinished(
+        //                 true, newVersion.toString(), link);
+        //         }
+        //         else
+        //         {
+        //             emit checkFinished(false, "", "");
+        //         }
+        //     }
         }
     }
     reply->deleteLater();

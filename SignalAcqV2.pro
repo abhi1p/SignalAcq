@@ -8,9 +8,19 @@ CONFIG += qwt
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 DEFINES += PROGRAM_NAME=\\\"SignalAcq\\\"
-DEFINES += QT_NO_DEBUG_OUTPUT
+# Only define in release builds
+CONFIG(release, debug|release) {
+    DEFINES += QT_NO_INFO_OUTPUT
+    DEFINES += QT_NO_DEBUG_OUTPUT
+    DEFINES += QT_NO_CRITICAL_OUTPUT
+    DEFINES += QT_NO_WARNING_OUTPUT
 
-DEFINES += VERSION_MAJOR=0 VERSION_MINOR=1 VERSION_PATCH=0 VERSION_STRING=\\\"0.0.0\\\"
+}
+
+TARGET=SignalAcq
+DEFINES += CHAR_MAX_DISPLAY_SIZE=50
+
+DEFINES += VERSION_MAJOR=1 VERSION_MINOR=0 VERSION_PATCH=0 VERSION_STRING=\"\\\"1.0.0\\\"\" VERSION_REVISION=\"\\\"0\\\"\"
 SOURCES += \
     BLE/ble.cpp \
     Common/abstractdevice.cpp \
@@ -154,7 +164,6 @@ HEADERS += \
     mainwindow.h \
     setting_defines.h \
     utils.h \
-    version.h \
     versionnumber.h
 
 
@@ -192,6 +201,7 @@ RESOURCES += \
     qml.qrc
 
 DISTFILES += \
+    README.md \
     misc/bluetooth_icon.png \
     misc/program_name.desktop.in \
     misc/program_name.png \

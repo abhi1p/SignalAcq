@@ -25,6 +25,7 @@
 
 #include "portcontrol.h"
 #include "dataformatpanel.h"
+#include "ble_config.h"
 
 /**
  * Displays bits per second read from device.
@@ -40,16 +41,19 @@ public:
                       DataFormatPanel* dataFormatPanel,
                       QWidget *parent = 0);
 
+    void setBLEConfig(BLE_Config *bleConfig);
 private:
     PortControl* _portControl;
     DataFormatPanel* _dataFormatPanel;
     QTimer bpsTimer;
-
+    BLE_Config *_bleConfig;
     uint64_t prevBytesRead;
+
+    QString getAutoScaledSpeed(quint64 bitsRate);
 
 private slots:
     void onBpsTimeout();
-    void onPortToggled(bool open);
+    void onDataTransferStart(bool started);
 };
 
 #endif // BPSLABEL_H

@@ -227,6 +227,11 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>CommandEdit</class>
+   <extends>QLineEdit</extends>
+   <header>Common/commandedit.h</header>
+  </customwidget>
+  <customwidget>
    <class>NumberFormatBox</class>
    <extends>QWidget</extends>
    <header>numberformatbox.h</header>
@@ -237,11 +242,6 @@
    <extends>QWidget</extends>
    <header>endiannessbox.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>CommandEdit</class>
-   <extends>QLineEdit</extends>
-   <header>Common/commandedit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

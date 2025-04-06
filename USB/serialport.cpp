@@ -87,6 +87,25 @@ void SerialPort::setRts(bool toSet)
         m_serialPort->setRequestToSend(toSet);
     }
 }
+
+void SerialPort::sendCommandSerial(QByteArray command)
+{
+    if(m_serialPort->isOpen())
+    {
+        if(m_serialPort->write(command)<0)
+        {
+            emit log(QtCriticalMsg,"Send command failed");
+        }
+        else
+        {
+            emit log(QtInfoMsg,"Command sent");
+        }
+    }
+    else
+    {
+        emit log(QtCriticalMsg,"Serial port not opened");
+    }
+}
 void SerialPort::togglePort(QString portName, int baudRate, int parity, int dataBits, int stopBits, int flowControl, bool setDtr, bool setRts)
 {
     qInfo()<<"Port name: "<<portName;
@@ -96,6 +115,7 @@ void SerialPort::togglePort(QString portName, int baudRate, int parity, int data
         m_pinUpdateTimer->stop();
         m_serialPort->close();
         qDebug() << "Closed port:" << m_serialPort->portName();
+        emit log(QtInfoMsg,"Closed port: " + m_serialPort->portName());
         emit portToggledSignal(false);
     }
     else
@@ -122,7 +142,7 @@ void SerialPort::togglePort(QString portName, int baudRate, int parity, int data
 
             qDebug() << "Opened port:" << m_serialPort->portName();
             emit portToggledSignal(true);
-
+            emit log(QtInfoMsg,"Opened port: " + m_serialPort->portName());
             maxBitRate();//update max bit rate
         }
     }
@@ -150,25 +170,33 @@ void SerialPort::onPortError(QSerialPort::SerialPortError error)
         break;
     case QSerialPort::ResourceError :
         qWarning() << "Port error: resource unavaliable; most likely device removed.";
+        emit log(QtCriticalMsg,"Port error: device removed" );
         if (m_serialPort->isOpen())
         {
             qWarning() << "Closing port on resource error: " << m_serialPort->portName();
+            emit log(QtWarningMsg,"Closing port on resource error: " + m_serialPort->portName());
             m_pinUpdateTimer->stop();
             m_serialPort->close();
-            qDebug() << "Closed port:" << m_serialPort->portName();
-            emit portToggledSignal(false);
+            qDebug() << "Closed port: " << m_serialPort->portName();
+            emit log(QtInfoMsg,"Closed port: " + m_serialPort->portName());
+            // emit portToggledSignal(false);
         }
         emit loadPortListSignal();
         break;
     case QSerialPort::DeviceNotFoundError:
         qCritical() << "Device doesn't exist: " << m_serialPort->portName();
+        emit log(QtCriticalMsg,"Device doesn't exist: " + m_serialPort->portName());
+        // emit portToggledSignal(m_serialPort->isOpen());
         break;
     case QSerialPort::PermissionError:
         qCritical() << "Permission denied. Either you don't have \
                 required privileges or device is already opened by another process.";
+        emit log(QtCriticalMsg,"Port open permission denied");
                break;
     case QSerialPort::OpenError:
         qWarning() << "Device is already opened!";
+        // emit portToggledSignal(m_serialPort->isOpen());
+        emit log(QtCriticalMsg,"Port already opened");
         break;
     case QSerialPort::NotOpenError:
         qCritical() << "Device is not open!";
@@ -188,9 +216,11 @@ void SerialPort::onPortError(QSerialPort::SerialPortError error)
 #endif
     case QSerialPort::WriteError:
         qCritical() << "An error occurred while writing data.";
+        emit log(QtCriticalMsg,"An error occurred while writing data");
         break;
     case QSerialPort::ReadError:
         qCritical() << "An error occurred while reading data.";
+        emit log(QtCriticalMsg,"An error occurred while reading data");
         break;
     case QSerialPort::UnsupportedOperationError:
 #ifdef Q_OS_UNIX
@@ -210,11 +240,13 @@ void SerialPort::onPortError(QSerialPort::SerialPortError error)
             break;
 #endif
         qCritical() << "Unknown error! Error: " << m_serialPort->errorString();
+        emit log(QtCriticalMsg,"Unknown error: "+m_serialPort->errorString());
         break;
     default:
         qCritical() << "Unhandled port error: " << error;
         break;
     }
+    emit portToggledSignal(m_serialPort->isOpen());
 }
 
 void SerialPort::maxBitRate()

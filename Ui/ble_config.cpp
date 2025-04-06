@@ -2,20 +2,20 @@
 #include "ui_ble_config.h"
 #include <QThread>
 
-BLE_Config::BLE_Config(BPSLabel *bpsLabel, QWidget *parent)
+BLE_Config::BLE_Config(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::BLE_Config)
 {
     ui->setupUi(this);
 
     // m_bleDevice=device;
-    this->bpsLabel=bpsLabel;
+    // this->bpsLabel=bpsLabel;
     // connect(this,&BLE_Config::refreshBLEdevicesSignal,m_bleDevice,&BLE::startBLEdiscovery,Qt::QueuedConnection);
     // connect(this,&BLE_Config::connectToBleDeviceSignal,m_bleDevice,&BLE::connectToBleDevice,Qt::QueuedConnection);
     // connect(this,&BLE_Config::readCharacteristicsSignal,m_bleDevice,&BLE::readCharacteristics,Qt::QueuedConnection);
     // connect(this,&BLE_Config::writeCharacteristicsSignal,m_bleDevice,&BLE::writeCharacteristics,Qt::QueuedConnection);
     // connect(this,&BLE_Config::enableNotificationSignal,m_bleDevice,&BLE::enableNotification,Qt::QueuedConnection);
-    connect(this,&BLE_Config::enableNotificationSignal,this,&BLE_Config::enableCharNotification,Qt::QueuedConnection);
+    // connect(this,&BLE_Config::enableNotificationSignal,this,&BLE_Config::enableCharNotification,Qt::QueuedConnection);
     // connect(m_bleDevice,&BLE::bleScanFinished,this,&BLE_Config::stopRefreshLoadingIndicator,Qt::QueuedConnection);
     // connect(m_bleDevice,&BLE::addDiscoveredBLEdevicesSignal,this,&BLE_Config::addDiscoveredBLEdevices,Qt::QueuedConnection);
     // connect(m_bleDevice,&BLE::bleDeviceConnectedSignal,this,&BLE_Config::bleDeviceConnected,Qt::QueuedConnection);
@@ -23,6 +23,8 @@ BLE_Config::BLE_Config(BPSLabel *bpsLabel, QWidget *parent)
     // connect(m_bleDevice,&BLE::addCharacteristicsSignal,this,&BLE_Config::addCharacteristics,Qt::QueuedConnection);
     // connect(m_bleDevice,&BLE::readCharacteristicsSuccessSignal,this,&BLE_Config::readCharacteristicsSuccess,Qt::QueuedConnection);
     // connect(m_bleDevice,&BLE::characteristicChangedSignal,this,&BLE_Config::characteristicChanged,Qt::QueuedConnection);
+
+    connect(this,&BLE_Config::bleDeviceConnectedSignal,this,&BLE_Config::bleDeviceConnected,Qt::QueuedConnection);
 
 
     m_refreshBleSpinner=new WaitingSpinnerWidget(ui->refreshBLEdevices);
@@ -38,8 +40,8 @@ BLE_Config::BLE_Config(BPSLabel *bpsLabel, QWidget *parent)
     connect(ui->BLEconnectBtn,&QToolButton::clicked,this,&BLE_Config::connectToBleDevice,Qt::QueuedConnection);
     connect(ui->availabelBLEdevicesListView,&QListView::clicked,this,&BLE_Config::onBleDeviceSelection,Qt::QueuedConnection);
 
-    m_speedTimer.setInterval(1000);
-    connect(&m_speedTimer,&QTimer::timeout,this,&BLE_Config::speedTimerExpired,Qt::QueuedConnection);
+    // m_speedTimer.setInterval(1000);
+    // connect(&m_speedTimer,&QTimer::timeout,this,&BLE_Config::speedTimerExpired,Qt::QueuedConnection);
 }
 
 BLE_Config::~BLE_Config()
@@ -98,7 +100,7 @@ void BLE_Config::bleDeviceConnected(bool connected)
     {
         // m_bleDEviceConnected=true;
         qInfo()<<"BLE device connected";
-        // disableBleDeviceList();
+        disableBleDeviceList();
         ui->BLEconnectBtn->setText("Disconnect");
         removeAllCharacteristics();
     }
@@ -135,7 +137,14 @@ void BLE_Config::addCharacteristics(QBluetoothUuid srvcUuid, QBluetoothUuid char
     m_charUiMap->insert(charUuid,charTab);
     ui->bleaddCharTabLayout->addWidget(charTab);
 }
-
+void BLE_Config::updateCharacteristics(QBluetoothUuid uuid, const QByteArray &value)
+{
+    if(m_charUiMap->contains(uuid) && (value.size()<CHAR_MAX_DISPLAY_SIZE))
+    {
+        bleChar *charUi = m_charUiMap->value(uuid); //get charUI object by using key in a hash table
+        charUi->updateValue(value);
+    }
+}
 void BLE_Config::readCharacteristicsSuccess(const QLowEnergyCharacteristic &characteristic, const QByteArray &value)
 {
     // for (int i = 0; i < m_charUiList->size(); i++)
@@ -148,25 +157,18 @@ void BLE_Config::readCharacteristicsSuccess(const QLowEnergyCharacteristic &char
     // }
 
     QBluetoothUuid uuid=characteristic.uuid();
-    if(m_charUiMap->contains(uuid))
-    {
-        bleChar *charUi = m_charUiMap->value(uuid); //get charUI object by using key in a hash table
-        charUi->updateValue(value);
-    }
+    updateCharacteristics(uuid,value);
+
 }
 
 void BLE_Config::characteristicChanged(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue)
 {
-    m_totalData+=newValue.size(); //for transfer speed calculation
+    // m_totalData+=newValue.size(); //for transfer speed calculation
 
-#if 0
+
     QBluetoothUuid uuid=characteristic.uuid();
-    if(m_charUiMap->contains(uuid))
-    {
-        bleChar *charUi = m_charUiMap->value(uuid); //get charUI object by using key in a hash table
-        charUi->updateValue(newValue);
-    }
-#endif
+    updateCharacteristics(uuid,newValue);
+
 }
 
 void BLE_Config::removeAllCharacteristics()
@@ -199,38 +201,40 @@ void BLE_Config::removeAllCharacteristics()
     m_charUiMap->clear();
 }
 
-void BLE_Config::enableCharNotification(bool toEnable, QBluetoothUuid charUuid)
-{
-    if(toEnable)
-    {
-        m_totalData=0;
-        m_speedTimer.start();
 
-    }
-    else
-    {
-        m_speedTimer.stop();
-    }
-}
 
-void BLE_Config::speedTimerExpired()
-{
-    // qInfo()<<"Timer timeout";
-    quint64 bits=m_totalData*8;
-    QString str;
-    if(bits>1024)
-    {
-        bits/=1024;
-        str = QString(tr("%1kbps")).arg(bits);
-    }
-    else
-    {
-        str = QString(tr("%1bps")).arg(bits);
-    }
+// void BLE_Config::enableCharNotification(bool toEnable, QBluetoothUuid charUuid)
+// {
+//     if(toEnable)
+//     {
+//         m_totalData=0;
+//         m_speedTimer.start();
 
-    this->bpsLabel->setText(str);
-    m_totalData=0;
-}
+//     }
+//     else
+//     {
+//         m_speedTimer.stop();
+//     }
+// }
+
+// void BLE_Config::speedTimerExpired()
+// {
+//     // qInfo()<<"Timer timeout";
+//     quint64 bits=m_totalData*8;
+//     QString str;
+//     if(bits>1024)
+//     {
+//         bits/=1024;
+//         str = QString(tr("%1kbps")).arg(bits);
+//     }
+//     else
+//     {
+//         str = QString(tr("%1bps")).arg(bits);
+//     }
+
+//     this->bpsLabel->setText(str);
+//     m_totalData=0;
+// }
 
 void BLE_Config::connectToBleDevice()
 {

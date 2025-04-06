@@ -66,6 +66,7 @@ void CommandWidgetBLE::onSendClicked()
     if (command.isEmpty())
     {
         qWarning() << "Enter a command to send!";
+        emit log(QtWarningMsg,"Enter a command to send!");
         ui->leCommand->setFocus(Qt::OtherFocusReason);
         emit focusRequested();
         return;

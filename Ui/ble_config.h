@@ -14,7 +14,7 @@
 #include <QHash>
 #include "BLE/ble.h"
 #include <QTimer>
-#include "bpslabel.h"
+// #include "bpslabel.h"
 
 namespace Ui {
 class BLE_Config;
@@ -27,7 +27,8 @@ class BLE_Config : public QWidget
     Q_OBJECT
 
 public:
-    explicit BLE_Config(BPSLabel *bpsLabel, QWidget *parent = nullptr);
+    explicit BLE_Config(QWidget *parent = nullptr);
+    // explicit BLE_Config(BPSLabel *bpsLabel, QWidget *parent = nullptr);
     ~BLE_Config();
 
 private slots:
@@ -50,9 +51,9 @@ private:
     QScopedPointer<QHash<QBluetoothUuid,bleChar*>> m_charUiMap;
     // QScopedPointer<bleChar*> m_bleChar;
 
-    quint64 m_totalData=0;
-    QTimer m_speedTimer;
-    BPSLabel *bpsLabel;
+    // quint64 m_totalData=0;
+    // QTimer m_speedTimer;
+    // BPSLabel *bpsLabel;
 
 signals:
     void refreshBLEdevicesSignal();
@@ -61,6 +62,7 @@ signals:
     void readCharacteristicsSignal(QBluetoothUuid charUuid);
     void writeCharacteristicsSignal(QBluetoothUuid charUuid, QByteArray text);
     void enableNotificationSignal(bool toEnable, QBluetoothUuid charUuid);
+    void bleDeviceConnectedSignal(bool connected);
 
 
 public slots:
@@ -83,8 +85,9 @@ private slots:
     void connectToBleDevice();
     void onBleDeviceSelection(const QModelIndex &index);
     void removeAllCharacteristics();
-    void enableCharNotification(bool toEnable, QBluetoothUuid charUuid);
-    void speedTimerExpired();
+    // void enableCharNotification(bool toEnable, QBluetoothUuid charUuid);
+    // void speedTimerExpired();
+    void updateCharacteristics(QBluetoothUuid uuid, const QByteArray &value);
 };
 
 #endif // BLE_CONFIG_H

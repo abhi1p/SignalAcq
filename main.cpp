@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "BLE/ble.h"
 #include <QApplication>
-#include <iostream>
+// #include <iostream>
 #include "USB/serialport.h"
 
 
@@ -61,11 +61,14 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+    a.setApplicationName(PROGRAM_NAME);
+    a.setApplicationDisplayName(PROGRAM_NAME);
+    a.setWindowIcon(QIcon(":/icons/tango/tango/testIcon4.ico"));
     //qInfo()<<argc<<" "<<argv;
     qInfo()<<a.applicationDirPath();
     MainWindow w;
     // pMainWindow = &w;
-    //qInstallMessageHandler(messageHandler);
+    // qInstallMessageHandler(messageHandler);
     // BLE ble;
     // QSharedPointer<BLE> ble(new BLE,&QObject::deleteLater);
     BLE ble;

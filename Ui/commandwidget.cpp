@@ -20,15 +20,6 @@
 #include "commandwidget.h"
 #include "ui_commandwidget.h"
 
-
-#if QT_VERSION == QT_VERSION_CHECK(5, 15, 2)
-#include <QRegExp>
-#include <QRegExpValidator>
-// #elif QT_VERSION == QT_VERSION_CHECK(6, 5, 0)
-
-#endif
-
-
 #include <QtDebug>
 #include <QIcon>
 
@@ -68,6 +59,7 @@ void CommandWidget::onSendClicked()
     if (command.isEmpty())
     {
         qWarning() << "Enter a command to send!";
+        emit log(QtWarningMsg,"Enter a command to send!");
         ui->leCommand->setFocus(Qt::OtherFocusReason);
         emit focusRequested();
         return;

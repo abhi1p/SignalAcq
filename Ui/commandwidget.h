@@ -65,6 +65,8 @@ signals:
     /// emitted when user tries to send an empty command
     void focusRequested();
 
+    void log(QtMsgType type, QString text);
+
 private:
     Ui::CommandWidget *ui;
     QAction _sendAction;

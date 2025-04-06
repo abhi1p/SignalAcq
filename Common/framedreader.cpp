@@ -219,7 +219,12 @@ unsigned FramedReader::readData()
             }
             else
             {
-                if (debugModeEnabled) qCritical() << "Missed " << sync_i+1 << "th sync byte.";
+                if (debugModeEnabled)
+                {
+                    qCritical() << "Missed " << sync_i+1 << "th sync byte.";
+                    emit log(QtWarningMsg,"Missed "+QString::number(sync_i+1) + "th sync byte.");
+                }
+
             }
         }
         else if (hasSizeByte && !gotSize) // skipped if fixed frame size
@@ -266,7 +271,11 @@ unsigned FramedReader::readData()
             }
             else
             {
-                if (debugModeEnabled) qDebug() << "Frame size:" << frameSize;
+                if (debugModeEnabled)
+                {
+                    qDebug() << "Frame size:" << frameSize;
+                    emit log(QtInfoMsg,"Frame size:"+QString::number(frameSize));
+                }
                 gotSize = true;
             }
         }

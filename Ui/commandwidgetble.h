@@ -44,6 +44,7 @@ signals:
     void focusRequested();
     void sendCommandBLE(QBluetoothUuid charUuid, QByteArray command);
     void writeCharacteristicsSignal(QBluetoothUuid charUuid, QString text);
+    void log(QtMsgType type, QString text);
 
 
 public slots:

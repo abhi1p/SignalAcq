@@ -79,6 +79,7 @@ DataFormatPanel::DataFormatPanel(AbstractDevice *device, QWidget *parent) :
     ui->sourceCharacteristicsComboBox->setModel(m_bleCharModel);
     addCharacteristics(QBluetoothUuid(),QBluetoothUuid(),QLowEnergyCharacteristic::Notify); //add a dummy char
     connect(ui->sourceCharacteristicsComboBox,&QComboBox::currentIndexChanged,this,&DataFormatPanel::sourceCharacteristcsSelected,Qt::QueuedConnection);
+    connect(currentReader,&AbstractReader::log,this,&DataFormatPanel::log,Qt::QueuedConnection);
 
 }
 
@@ -255,4 +256,9 @@ void DataFormatPanel::loadSettings(QSettings* settings)
     bsReader.loadSettings(settings);
     asciiReader.loadSettings(settings);
     framedReader.loadSettings(settings);
+}
+
+AbstractDevice::INPUT_DEVICE DataFormatPanel::currentSelectedDevice()
+{
+    return m_device->currentDevice();
 }

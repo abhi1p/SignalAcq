@@ -16,19 +16,7 @@
 #include <Plot/plot.h>
 #include <Plot/barplot.h>
 #include "defines.h"
-#include "version.h"
 #include "setting_defines.h"
-
-// // TODO: depends on tab insertion order, a better solution would be to use object names
-// const QMap<int, QString> panelSettingMap({
-//     {0, "Port"},
-//     {1, "DataFormat"},
-//     {2, "Plot"},
-//     {3, "Commands"},
-//     {4, "Record"},
-//     {5, "TextView"},
-//     {6, "Log"}
-// });
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -46,17 +34,22 @@ MainWindow::MainWindow(QWidget *parent)
     // m_device()
 {
     ui->setupUi(this);
+    setWindowIcon(QIcon(":/icons/tango/tango/testIcon4.png"));
     m_plotMan = new PlotManager(ui->plotArea, &m_plotMenu, &m_stream);
 
     connect(this,&MainWindow::updateInputDeviceSignal,&m_device,&AbstractDevice::updateInputDevice,Qt::QueuedConnection);
-    m_bleConfig=new BLE_Config(&m_bpsLabel ,this);
+    m_bleConfig=new BLE_Config(this);
+    m_bpsLabel.setBLEConfig(m_bleConfig);
+    // m_bleConfig=new BLE_Config(&m_bpsLabel ,this);
     // m_filterBase=new Filter_base(this);
     ui->deviceStackedWidget->insertWidget(0,&m_portControl);
     ui->deviceStackedWidget->insertWidget(1,m_bleConfig);
     // ui->deviceStackedWidget->setCurrentIndex(0);
     selectCurrentActiveDevice(m_deviceList[0]);
     connect(ui->deviceStackedWidget,&QStackedWidget::currentChanged,&m_commandPanel,&CommandPanel::setCurrentIndex,Qt::QueuedConnection);
-
+    connect(this,&MainWindow::updateMenuCommands,&m_commandPanel,&CommandPanel::updateMenuCommands,Qt::QueuedConnection);
+    connect(&m_commandPanel,&CommandPanel::log,this,&MainWindow::log,Qt::QueuedConnection);
+    //emit updateMenuCommands();
     m_deviceListMap[m_deviceList[0]]= AbstractDevice::INPUT_DEVICE_SERIAL_PORT;
     m_deviceListMap[m_deviceList[1]]= AbstractDevice::INPUT_DEVICE_BLE;
 
@@ -252,6 +245,8 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::onSourceChanged);
     onSourceChanged(m_dataFormatPanel.activeSource());
 
+    connect(&m_dataFormatPanel, &DataFormatPanel::log,this, &MainWindow::log,Qt::QueuedConnection);
+
     // load default settings
     QSettings settings(PROGRAM_NAME, PROGRAM_NAME);
     loadAllSettings(&settings);
@@ -296,7 +291,7 @@ void MainWindow::connectBLESignalsAndSlots(BLE *ble)
 
     connect(ble,&BLE::bleScanFinished,m_bleConfig,&BLE_Config::stopRefreshLoadingIndicator,Qt::QueuedConnection);
     connect(ble,&BLE::addDiscoveredBLEdevicesSignal,m_bleConfig,&BLE_Config::addDiscoveredBLEdevices,Qt::QueuedConnection);
-    connect(ble,&BLE::bleDeviceConnectedSignal,m_bleConfig,&BLE_Config::bleDeviceConnected,Qt::QueuedConnection);
+    connect(ble,&BLE::bleDeviceConnectedSignal,m_bleConfig,&BLE_Config::bleDeviceConnectedSignal,Qt::QueuedConnection);
 
     connect(ble,&BLE::addCharacteristicsSignal,m_bleConfig,&BLE_Config::addCharacteristics,Qt::QueuedConnection);
     connect(ble,&BLE::readCharacteristicsSuccessSignal,m_bleConfig,&BLE_Config::readCharacteristicsSuccess,Qt::QueuedConnection);
@@ -313,6 +308,8 @@ void MainWindow::connectBLESignalsAndSlots(BLE *ble)
     //connect(ble,&BLE::readyRead,&m_device,&AbstractDevice::readyRead,Qt::QueuedConnection);
     connect(ble,&BLE::characteristicChangedSignal_plot,&m_device,&AbstractDevice::characteristicChanged,Qt::QueuedConnection);
 
+    connect(ble,&BLE::log,this,&MainWindow::log,Qt::QueuedConnection);
+
 }
 
 void MainWindow::connectSerialPortSignalsAndSlots(SerialPort *serial)
@@ -322,6 +319,7 @@ void MainWindow::connectSerialPortSignalsAndSlots(SerialPort *serial)
     connect(serial,&SerialPort::updatePinLedsSignal,&m_portControl,&PortControl::updatePinLeds,Qt::QueuedConnection);
     connect(serial,&SerialPort::portToggledSignal,&m_portControl,&PortControl::portToggledSignal,Qt::QueuedConnection);
     connect(serial,&SerialPort::loadPortListSignal,&m_portControl,&PortControl::loadPortList,Qt::QueuedConnection);
+    connect(serial,&SerialPort::log,this,&MainWindow::log,Qt::QueuedConnection);
 
 
     connect(&m_portControl,&PortControl::togglePortSignal,serial,&SerialPort::togglePort,Qt::QueuedConnection);
@@ -332,6 +330,7 @@ void MainWindow::connectSerialPortSignalsAndSlots(SerialPort *serial)
     connect(&m_portControl,&PortControl::selectFlowControlSignal,serial,&SerialPort::selectFlowControl,Qt::QueuedConnection);
     connect(&m_portControl,&PortControl::setDtrSignal,serial,&SerialPort::setDtr,Qt::QueuedConnection);
     connect(&m_portControl,&PortControl::setRtsSignal,serial,&SerialPort::setRts,Qt::QueuedConnection);
+    connect(&m_commandPanel,&CommandPanel::sendCommandSerialSignal,serial,&SerialPort::sendCommandSerial,Qt::QueuedConnection);
 
 }
 
@@ -389,6 +388,8 @@ Try fixing the permissions of file: %1, or just delete it.").arg(file);
     QMainWindow::closeEvent(event);
 }
 
+
+
 void MainWindow::addDeviceSelect_UI()
 {
 
@@ -404,6 +405,7 @@ void MainWindow::addDeviceSelect_UI()
     m_conDconLabel->setToolTip("Serial port closed");
     m_deviceSelectComboBox->addItems(m_deviceList);
     m_deviceSelectToolbar.setWindowTitle("Device Select Toolbar");
+    m_deviceSelectToolbar.setObjectName("devSelectToolbar");
     m_deviceSelectToolbar.addWidget(m_deviceSelectComboBox);
     m_deviceSelectToolbar.addSeparator();
     m_deviceSelectToolbar.addWidget(m_conDconLabel);
@@ -430,6 +432,7 @@ void MainWindow::deviceSelectIndexChanged(int index)
         m_conDconLabel->setPixmap(QPixmap(":/icons/tango/tango/bluetooth_off.png"));
         m_conDconLabel->setToolTip("BLE device disconnected");
     }
+    emit updateMenuCommands();
 }
 
 void MainWindow::addSourceTab(AbstractDevice::INPUT_DEVICE device)
@@ -681,7 +684,33 @@ PlotViewSettings MainWindow::viewSettings() const
 {
     return m_plotMenu.viewSettings();
 }
+void MainWindow::log(QtMsgType type, QString text)
+{
+    ui->statusBar->showMessage(text, 5000);
+     QString logString;
+    switch (type)
+    {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 5, 0))
+    case QtInfoMsg:
+        logString = "[Info] " + text;
+        break;
+#endif
+    case QtDebugMsg:
+        logString = "[Debug] " + text;
+        break;
+    case QtWarningMsg:
+        logString = "[Warning] " + text;
+        break;
+    case QtCriticalMsg:
+        logString = "[Error] " + text;
+        break;
+    case QtFatalMsg:
+        logString = "[Fatal] " + text;
+        break;
+    }
+    ui->ptLog->appendPlainText(logString);
 
+}
 void MainWindow::messageHandler(QtMsgType type,
                                 const QString &logString,
                                 const QString &msg)

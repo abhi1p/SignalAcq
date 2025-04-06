@@ -3,7 +3,7 @@
 AbstractDevice::AbstractDevice(AbstractDevice::INPUT_DEVICE device,QObject *parent)
     : QObject{parent},m_device(device)
 {
-    //m_device=device;
+    m_device=device;
     //m_bleDevice=bleDevice;
     //m_seriaPortDevice=serialPortDEvice;
     // canReadLine=&AbstractDevice::canReadLine_BLE;
@@ -11,10 +11,16 @@ AbstractDevice::AbstractDevice(AbstractDevice::INPUT_DEVICE device,QObject *pare
     updateInputDevice(device);
 }
 
+AbstractDevice::INPUT_DEVICE AbstractDevice::currentDevice()
+{
+    return m_device;
+}
+
 
 void AbstractDevice::updateInputDevice(AbstractDevice::INPUT_DEVICE device)
 {
     qInfo()<<"Input device update"<<device;
+    m_device=device;
 #if 0
     if(device==AbstractDevice::INPUT_DEVICE_BLE)
     {

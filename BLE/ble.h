@@ -115,6 +115,7 @@ signals:
     void characteristicChangedSignal(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue);
     void characteristicChangedSignal_plot(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue);
     void readyRead();
+    void log(QtMsgType type, QString text);
 
 };
 

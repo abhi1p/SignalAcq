@@ -62,6 +62,8 @@ public:
     /// Loads data format panel settings from a `QSettings`.
     void loadSettings(QSettings* settings);
 
+    AbstractDevice::INPUT_DEVICE currentSelectedDevice();
+
 public slots:
     void pause(bool);
     void enableDemo(bool); // demo shouldn't be enabled when port is open
@@ -76,6 +78,7 @@ signals:
     /// Active (selected) reader has changed.
     void sourceChanged(Source* source);
     void selectedSourceCharacteristicSignal(QString uuid);
+    void log(QtMsgType type, QString text);
 
 private:
     Ui::DataFormatPanel *ui;

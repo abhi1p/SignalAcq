@@ -20,6 +20,7 @@
 #include "bpslabel.h"
 
 const char* BPS_TOOLTIP = "bits per second";
+const char* BPS_TOOLTIP2 = "kbits per second";
 const char* BPS_TOOLTIP_ERR = "Maximum baud rate may be reached!";
 
 BPSLabel::BPSLabel(PortControl* portControl,
@@ -38,37 +39,63 @@ BPSLabel::BPSLabel(PortControl* portControl,
             this, &BPSLabel::onBpsTimeout);
 
     connect(portControl, &PortControl::portToggledSignal,
-            this, &BPSLabel::onPortToggled);
+            this, &BPSLabel::onDataTransferStart);
+}
+
+void BPSLabel::setBLEConfig(BLE_Config *bleConfig)
+{
+    _bleConfig=bleConfig;
+    connect(_bleConfig,&BLE_Config::bleDeviceConnectedSignal,this,&BPSLabel::onDataTransferStart,Qt::QueuedConnection);
+}
+
+QString BPSLabel::getAutoScaledSpeed(quint64 bitsRate)
+{
+    QString str;
+    if(bitsRate>2)
+    {
+        bitsRate/=1024;
+        str = QString(tr("%1kbps")).arg(bitsRate);
+        setToolTip(tr(BPS_TOOLTIP2));
+    }
+    else
+    {
+        str = QString(tr("%1bps")).arg(bitsRate);
+        setToolTip(tr(BPS_TOOLTIP));
+    }
+    return str;
 }
 
 void BPSLabel::onBpsTimeout()
 {
-    uint64_t curBytesRead = _dataFormatPanel->bytesRead();
-    uint64_t bytesRead = curBytesRead - prevBytesRead;
+    quint64 curBytesRead = _dataFormatPanel->bytesRead();
+    quint64 bytesRead = curBytesRead - prevBytesRead;
+// #ifdef QT_DEBUG
+//     qInfo()<<"Current read: "<<curBytesRead<<"Prev:"<<prevBytesRead<<"Diff: "<<bytesRead;
+// #endif
     prevBytesRead = curBytesRead;
 
-    unsigned bits = bytesRead * 8;
+    quint64 bits = bytesRead * 8;
     // qInfo()<<"Total bits:"<<bits;
-    unsigned maxBps = _portControl->maxBitRate();
+    quint64 maxBps = _portControl->maxBitRate();
     // qInfo()<<"Max bit rate: "<<maxBps;
-    QString str;
-    if (bits >= maxBps)
+    QString str=getAutoScaledSpeed(bits);
+    if ( (_dataFormatPanel->currentSelectedDevice()==AbstractDevice::INPUT_DEVICE_SERIAL_PORT) && (bits >= maxBps))
     {
         // TODO: an icon for bps warning
         str = QString(tr("!%1/%2bps")).arg(bits).arg(maxBps);
         setToolTip(tr(BPS_TOOLTIP_ERR));
     }
-    else
-    {
-        str = QString(tr("%1bps")).arg(bits);
-        setToolTip(tr(BPS_TOOLTIP));
-    }
+    // else
+    // {
+    //     str = QString(tr("%1bps")).arg(bits);
+
+    // }
     setText(str);
 }
 
-void BPSLabel::onPortToggled(bool open)
+void BPSLabel::onDataTransferStart(bool started)
 {
-    if (open)
+    if (started)
     {
         bpsTimer.start(1000);
     }

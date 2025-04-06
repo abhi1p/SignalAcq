@@ -44,6 +44,7 @@ void BLE::startBLEdiscovery()
 
     m_BLEdiscoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
     qInfo()<<"Starting BLE discovery in BLE class";
+    emit log(QtInfoMsg,"Starting BLE discovery");
 }
 
 
@@ -59,10 +60,12 @@ void BLE::_scanError(QBluetoothDeviceDiscoveryAgent::Error error)
     if(error==QBluetoothDeviceDiscoveryAgent::PoweredOffError)
     {
         qInfo()<<"Bluetooth disabled";
+        emit log(QtCriticalMsg,"Bluetooth disabled");
     }
     else if(error==QBluetoothDeviceDiscoveryAgent::MissingPermissionsError)
     {
         qInfo()<<"Bluetooth permisssion denied";
+        emit log(QtCriticalMsg,"Bluetooth permisssion denied");
     }
     emit bleScanFinished();
 }
@@ -72,6 +75,7 @@ void BLE::_scanFinished()
     qInfo()<<"BLE scan finished";
     emit bleScanFinished();
     qInfo()<<"Current  BLE thread:"<<QThread::currentThread();
+    emit log(QtInfoMsg,"BLE discovery finished");
 }
 
 
@@ -83,27 +87,32 @@ void BLE::bleDiscoveryErrorOccurred(QLowEnergyController::Error newError)
         //failed to connect to device
         qInfo()<<"Filed to connect to ble device";
         emit bleDeviceConnectedSignal(false);
+        emit log(QtCriticalMsg,"Filed to connect to selected ble device");
     }
     else if(newError==QLowEnergyController::RemoteHostClosedError)
     {
         qInfo()<<"The remote device closed the connection";
         emit bleDeviceConnectedSignal(false);
+        emit log(QtCriticalMsg,"The remote device closed the connection");
 
     }
     else if(newError==QLowEnergyController::NetworkError)
     {
         //network error
         qInfo()<<"Network error";
+        emit log(QtCriticalMsg,"Network error");
     }
     else
     {
         qInfo()<<"Error occured"<<newError;
+        emit log(QtCriticalMsg,"Unknown BLE error");
     }
 }
 
 void BLE::bleDeviceConnected()
 {
     emit bleDeviceConnectedSignal(true);
+    emit log(QtInfoMsg,"Connected to BLE device: "+ m_BLEcontroller->remoteName());
     m_Tdata=0;
     qInfo()<<"BLE device connected";
     // if(!m_discoveredServicesMap.isNull())
@@ -125,6 +134,7 @@ void BLE::bleDeviceConnected()
 
     connect(this,&BLE::discoverServiceDetailsSignal,this,&BLE::discoverServiceDetails,Qt::QueuedConnection);
     m_BLEcontroller->discoverServices();
+    emit log(QtInfoMsg,"Starting detailed services discovery");
 
 }
 
@@ -137,6 +147,7 @@ void BLE::bleDeviceDisconnected()
     m_discoveredServicesMap->clear();
 
     //disconnect(this,&BLE::discoverServiceDetailsSignal,this,&BLE::discoverServiceDetails);
+    emit log(QtInfoMsg,"Disconnected to BLE device: "+ m_BLEcontroller->remoteName());
 }
 
 void BLE::bleCharacteristicChanged(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue)
@@ -253,6 +264,8 @@ void BLE::discoverServiceDetails()
         connect(m_BLEservice.data(), &QLowEnergyService::characteristicRead, this, &BLE::readCharacteristicsSuccessSignal,Qt::QueuedConnection);
         connect(m_BLEservice.data(), &QLowEnergyService::errorOccurred, this, &BLE::bleServiceErrorOccurred,Qt::QueuedConnection);
         connect(m_BLEservice.data(), &QLowEnergyService::characteristicWritten, this, &BLE::characteristicWritten,Qt::QueuedConnection);
+        connect(m_BLEservice.data(), &QLowEnergyService::descriptorWritten, this, &BLE::bleDescriptorWritten,Qt::QueuedConnection);
+        // connect(m_BLEservice.data(), &QLowEnergyService::descriptorRead, this, &BLE::bleDescriptorRead,Qt::QueuedConnection);
 
         /*
          * Connect characteristics changed signal to characteristics viewer
@@ -326,6 +339,10 @@ void BLE::bleServiceStateChanged(QLowEnergyService::ServiceState newState)
             {
                 emit discoverServiceDetailsSignal();
             }
+            else
+            {
+                emit log(QtInfoMsg,"Detailed services discovery finished");
+            }
             break;
         }
         default:
@@ -370,6 +387,16 @@ void BLE::bleDescriptorWritten(const QLowEnergyDescriptor &descriptor, const QBy
     {
         qInfo()<<"Descriptor written: "<<newValue.toHex();
         // const QLowEnergyCharacteristic hrChar =m_BLEservice->characteristic(QBluetoothUuid(m_charUUID));
+        if(descriptor.value()==QLowEnergyCharacteristic::CCCDEnableNotification)
+        {
+            // descriptor.
+            emit log(QtInfoMsg,"Characteristics notification enabled");
+        }
+        else if(descriptor.value()==QLowEnergyCharacteristic::CCCDDisable)
+        {
+            emit log(QtInfoMsg,"Characteristics notification disabled");
+        }
+
 
 
     }
@@ -378,24 +405,91 @@ void BLE::bleDescriptorWritten(const QLowEnergyDescriptor &descriptor, const QBy
 void BLE::bleServiceErrorOccurred(QLowEnergyService::ServiceError newError)
 {
     qInfo()<<newError;
+    switch(newError)
+    {
+
+        case QLowEnergyService::NoError:
+        {
+            break;
+        }
+        case QLowEnergyService::OperationError:
+        {
+            break;
+        }
+        case QLowEnergyService::CharacteristicWriteError:
+        {
+            emit log(QtCriticalMsg,"Characteristic write error");
+            break;
+        }
+        case QLowEnergyService::DescriptorWriteError:
+        {
+            qInfo()<<"Descriptor write error";
+            break;
+        }
+        case QLowEnergyService::UnknownError:
+        {
+            break;
+        }
+        case QLowEnergyService::CharacteristicReadError:
+        {
+            emit log(QtCriticalMsg,"Characteristic read error");
+            break;
+        }
+        case QLowEnergyService::DescriptorReadError:
+        {
+            qInfo()<<"Descriptor read error";
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+
 }
 
 
 
 void BLE::stateChanged(QLowEnergyController::ControllerState state)
 {
-    if(state==QLowEnergyController::ConnectingState)
+    switch(state)
+    {
+
+    case QLowEnergyController::UnconnectedState:
+    {
+        break;
+    }
+    case QLowEnergyController::ConnectingState:
     {
         qInfo()<<"Connecting..";
+        emit log(QtInfoMsg,"Connecting to BLE device...");
+        break;
     }
-    else if(state==QLowEnergyController::ConnectedState)
+    case QLowEnergyController::ConnectedState:
     {
         qInfo()<<"Connected to BLE device";
+        break;
     }
-    else if(state==QLowEnergyController::ClosingState)
+    case QLowEnergyController::DiscoveringState:
+    {
+        break;
+    }
+    case QLowEnergyController::DiscoveredState:
+    {
+        break;
+    }
+    case QLowEnergyController::ClosingState:
     {
         qInfo()<<"Disconnecting..";
+        break;
     }
+    case QLowEnergyController::AdvertisingState:
+    {
+        break;
+    }
+
+    }
+
 }
 
 void BLE::selectBleDevice(QBluetoothDeviceInfo bleDeviceInfo)
@@ -440,6 +534,7 @@ void BLE::characteristicChangedPlot(const QLowEnergyCharacteristic &characterist
 {
     if(characteristic.uuid()==m_prevSelectedUuid)
     {
+        // qInfo()<<"Value: "<<newValue;
         emit characteristicChangedSignal_plot(characteristic,newValue);
     }
 }
@@ -475,11 +570,6 @@ void BLE::selectedSourceCharacteristic(QString uuid)
 
 
 
-void BLE::characteristicWritten(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue)
-{
-    qInfo()<<"data sent";
-}
-
 void BLE::connectionUpdated(const QLowEnergyConnectionParameters &newParameters)
 {
     qInfo()<<"<--Connection parameter updated-->";
@@ -510,9 +600,10 @@ void BLE::readCharacteristics(QBluetoothUuid charUuid)
     // {
     //     qInfo()<<"Invalid characteristics";
     // }
-
-    if(m_discoveredServicesMap->contains(charUuid))
+    qInfo()<<"BLE state: "<<m_BLEcontroller->state();
+    if(m_discoveredServicesMap->contains(charUuid) && (m_BLEcontroller->state()==QLowEnergyController::DiscoveredState))
     {
+        qInfo()<<"Read char called";
         QSharedPointer<QLowEnergyService> servc=m_discoveredServicesMap->value(charUuid);
         const QLowEnergyCharacteristic hrChar=servc->characteristic(charUuid);
         servc->readCharacteristic(hrChar);
@@ -522,13 +613,22 @@ void BLE::readCharacteristics(QBluetoothUuid charUuid)
 
 void BLE::writeCharacteristics(QBluetoothUuid charUuid, QByteArray text)
 {
-    if(m_discoveredServicesMap->contains(charUuid))
+    if(m_discoveredServicesMap->contains(charUuid) && (m_BLEcontroller->state()==QLowEnergyController::DiscoveredState))
     {
+        // qInfo()<<"Write char called";
         QSharedPointer<QLowEnergyService> servc=m_discoveredServicesMap->value(charUuid);
         const QLowEnergyCharacteristic hrChar=servc->characteristic(charUuid);
         servc->writeCharacteristic(hrChar,text,QLowEnergyService::WriteWithoutResponse);
+        emit log(QtInfoMsg,"Characteristic written"); ///log for WriteWithoutResponse
         // servc->writeCharacteristic(hrChar,text.toUtf8(),QLowEnergyService::WriteWithoutResponse);
     }
+}
+
+void BLE::characteristicWritten(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue)
+{
+    ///emmited only for write with response(not implemented)
+    qInfo()<<"data sent";
+    emit log(QtInfoMsg,"Characteristic written"); ///log for WriteWithResponse
 }
 
 void BLE::enableNotification(bool toEnable, QBluetoothUuid charUuid)

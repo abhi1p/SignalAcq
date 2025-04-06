@@ -29,12 +29,14 @@ bleChar::bleChar(QWidget *parent, QBluetoothUuid srvcUuid, QBluetoothUuid charUu
     {
         ui->charWriteBtn->setEnabled(true);
         ui->bleCharValueLineEdit->setEnabled(true);
+        // ui->bleCharValueLineEdit->setReadOnly(true);
         connect(ui->charWriteBtn,&QPushButton::clicked,this,&bleChar::writeCharacteristics,Qt::QueuedConnection);
     }
     else
     {
-        ui->charWriteBtn->setEnabled(false);
+        // ui->charWriteBtn->setEnabled(false);
         ui->bleCharValueLineEdit->setEnabled(false);
+        ui->bleCharValueLineEdit->setReadOnly(false);
     }
 
     if(flag & QLowEnergyCharacteristic::Read)
@@ -87,7 +89,7 @@ void bleChar::enableNotification(int state)
 
 void bleChar::updateValue(const QByteArray &value)
 {
-    qInfo()<<"Value read:"<<value<<"Hex value:"<<value.toHex()<<"Size"<<value.size();
+    //qInfo()<<"Value read:"<<value<<"Hex value:"<<value.toHex()<<"Size"<<value.size();
     // unsigned size1=value.size();
     QString val=QString(value);
     // unsigned size2=val.length();
